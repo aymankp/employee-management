@@ -1,0 +1,54 @@
+/* DARK MODE WIDGET */
+
+body.dark .stat-card {
+  background: var(--card-bg);
+  color: #f1f5f9;
+  border: 1px solid #334155;
+}
+
+body.dark .stat-card h3 {
+  color: #cbd5f5;
+}
+
+body.dark .stat-value {
+  color: #ffffff;
+}
+
+body.dark .stat-icon {
+  background: #334155;
+}
+
+.stat-card{
+  display:flex;
+  align-items:center;
+  gap:16px;
+  padding:22px;
+  border-radius:16px;
+
+  background:var(--card-bg);
+  border:1px solid var(--border-light);
+
+  transition:all .35s ease;
+  position:relative;
+}
+
+.stat-card:hover{
+  transform:translateY(-6px);
+  box-shadow:0 18px 40px rgba(0,0,0,0.12);
+}
+
+/* subtle gradient glow */
+
+.stat-card::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  border-radius:16px;
+  background:linear-gradient(120deg,#3b82f6,#9333ea);
+  opacity:0;
+  transition:.3s;
+}
+
+.stat-card:hover::after{
+  opacity:.05;
+}
