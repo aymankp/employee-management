@@ -1,25 +1,46 @@
-import React, { useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { Bell, LogOut, Menu, Moon, Sun, User } from "lucide-react";
 import "./Header.css";
-
+import React, { useState, useEffect } from "react";
+import socket from "../../socket";
 const Header = ({ toggleSidebar }) => {
   const { user, logout } = useAuth();
-
   const [showNotif, setShowNotif] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
 
- const toggleDark = () => {
-  const role = user?.role;
-  const key = `${role}-theme`;
+  const [notifications,setNotifications]=useState(0);
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("theme");
 
+    if (savedTheme === "dark") {
+      document.body.classList.add("dark");
+      setDarkMode(true);
+    } else {
+      document.body.classList.remove("dark");
+      setDarkMode(false);
+    }
+    socket.on("leave-status-update", () => {
+    setNotifications(prev => prev + 1);
+  });
+
+  return () => {
+    socket.off("leave-status-update");
+  };
+  }, []);
+  const toggleDark = () => {
   const isDark = document.body.classList.toggle("dark");
 
   setDarkMode(isDark);
-
-  localStorage.setItem(key, isDark ? "dark" : "light");
+  localStorage.setItem("theme", isDark ? "dark" : "light");
 };
+  useEffect(() => {
+    if (darkMode) {
+      document.body.classList.add("dark");
+    } else {
+      document.body.classList.remove("dark");
+    }
+  }, [darkMode]);
   return (
     <header className="header">
       {/* LEFT */}
@@ -41,8 +62,11 @@ const Header = ({ toggleSidebar }) => {
         {/* NOTIFICATIONS */}
         <div className="dropdown-wrapper">
           <button className="icon-btn" onClick={() => setShowNotif(!showNotif)}>
-            <Bell size={18} />
-            <span className="notif-badge">3</span>
+           <Bell size={18} />
+
+{notifications > 0 && (
+  <span className="notif-badge">{notifications}</span>
+)}
           </button>
 
           {showNotif && (

@@ -1,4 +1,4 @@
-
+import "./Widget.css"
 export default function Widget({ icon, title, value, subtitle }) {
   return (
     <div className="stat-card">

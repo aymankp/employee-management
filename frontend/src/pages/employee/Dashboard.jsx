@@ -112,13 +112,28 @@ export default function EmployeeDashboard() {
     ],
   };
 
-  const chartOptions = {
-    responsive: true,
-    plugins: {
-      legend: { display: false },
-    },
-  };
+const isDark = document.body.classList.contains("dark");
 
+const chartOptions = {
+  responsive:true,
+  plugins:{
+    legend:{
+      labels:{
+        color:isDark ? "#e2e8f0" : "#334155"
+      }
+    }
+  },
+  scales:{
+    x:{
+      ticks:{ color:isDark ? "#e2e8f0" : "#334155" },
+      grid:{ color:isDark ? "#334155" : "#e2e8f0" }
+    },
+    y:{
+      ticks:{ color:isDark ? "#e2e8f0" : "#334155" },
+      grid:{ color:isDark ? "#334155" : "#e2e8f0" }
+    }
+  }
+};
   // ------------------------
   // Helpers
   // ------------------------
@@ -232,7 +247,7 @@ export default function EmployeeDashboard() {
         </div>
 
         <div className="card-body chart-container">
-          <Bar data={chartData} options={chartOptions} />
+        <Bar key={isDark ? "dark" : "light"} data={chartData} options={chartOptions}/>
         </div>
       </div>
 

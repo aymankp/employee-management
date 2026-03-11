@@ -1,23 +1,23 @@
 import { useState, useEffect } from "react";
-import api from '../../../services/api';
-import { 
-  Calendar, 
+import api from "../../../services/api";
+import {
+  Calendar,
   CheckCircle,
   XCircle,
   AlertCircle,
   Filter,
-  Search
-} from 'lucide-react';
-// import "./Leave.css";
+  Search,
+} from "lucide-react";
+import "./Leave.css";
 
 export default function LeaveHistory() {
   const [leaves, setLeaves] = useState([]);
   const [filteredLeaves, setFilteredLeaves] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({
-    status: 'all',
-    type: 'all',
-    search: ''
+    status: "all",
+    type: "all",
+    search: "",
   });
 
   useEffect(() => {
@@ -43,19 +43,19 @@ export default function LeaveHistory() {
     let filtered = [...leaves];
 
     // Filter by status
-    if (filters.status !== 'all') {
-      filtered = filtered.filter(l => l.status === filters.status);
+    if (filters.status !== "all") {
+      filtered = filtered.filter((l) => l.status === filters.status);
     }
 
     // Filter by type
-    if (filters.type !== 'all') {
-      filtered = filtered.filter(l => l.leaveType === filters.type);
+    if (filters.type !== "all") {
+      filtered = filtered.filter((l) => l.leaveType === filters.type);
     }
 
     // Filter by search (reason)
-    if (filters.search) {
-      filtered = filtered.filter(l => 
-        l.reason.toLowerCase().includes(filters.search.toLowerCase())
+    if (filters.search.trim() !== "") {
+      filtered = filtered.filter((l) =>
+        l.reason.toLowerCase().includes(filters.search.toLowerCase()),
       );
     }
 
@@ -63,25 +63,37 @@ export default function LeaveHistory() {
   };
 
   const getStatusBadge = (status) => {
-    switch(status) {
-      case 'approved':
-        return <span className="badge badge-success"><CheckCircle size={12} /> Approved</span>;
-      case 'rejected':
-        return <span className="badge badge-danger"><XCircle size={12} /> Rejected</span>;
-      case 'pending':
-        return <span className="badge badge-warning"><AlertCircle size={12} /> Pending</span>;
+    switch (status) {
+      case "approved":
+        return (
+          <span className="badge badge-success">
+            <CheckCircle size={12} /> Approved
+          </span>
+        );
+      case "rejected":
+        return (
+          <span className="badge badge-danger">
+            <XCircle size={12} /> Rejected
+          </span>
+        );
+      case "pending":
+        return (
+          <span className="badge badge-warning">
+            <AlertCircle size={12} /> Pending
+          </span>
+        );
       default:
         return <span className="badge badge-secondary">{status}</span>;
     }
   };
 
   const getTypeBadge = (type) => {
-    switch(type) {
-      case 'casual':
+    switch (type) {
+      case "casual":
         return <span className="badge badge-casual">Casual</span>;
-      case 'sick':
+      case "sick":
         return <span className="badge badge-sick">Sick</span>;
-      case 'emergency':
+      case "emergency":
         return <span className="badge badge-danger">Emergency</span>;
       default:
         return <span className="badge badge-secondary">{type}</span>;
@@ -102,13 +114,15 @@ export default function LeaveHistory() {
           <Filter size={16} />
           <h3>Filters</h3>
         </div>
-        
+
         <div className="filters-grid">
           <div className="filter-group">
             <label>Status</label>
-            <select 
+            <select
               value={filters.status}
-              onChange={(e) => setFilters({...filters, status: e.target.value})}
+              onChange={(e) =>
+                setFilters({ ...filters, status: e.target.value })
+              }
               className="filter-select"
             >
               <option value="all">All Status</option>
@@ -120,9 +134,9 @@ export default function LeaveHistory() {
 
           <div className="filter-group">
             <label>Leave Type</label>
-            <select 
+            <select
               value={filters.type}
-              onChange={(e) => setFilters({...filters, type: e.target.value})}
+              onChange={(e) => setFilters({ ...filters, type: e.target.value })}
               className="filter-select"
             >
               <option value="all">All Types</option>
@@ -140,7 +154,9 @@ export default function LeaveHistory() {
                 type="text"
                 placeholder="Search by reason..."
                 value={filters.search}
-                onChange={(e) => setFilters({...filters, search: e.target.value})}
+                onChange={(e) =>
+                  setFilters({ ...filters, search: e.target.value })
+                }
               />
             </div>
           </div>

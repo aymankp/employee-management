@@ -59,9 +59,9 @@
   color:white;
 }
 
-.sidebar-footer{
-  padding:24px;
-  border-top:1px solid #e2e8f0;
+.sidebar-footer {
+  border-top: 1px solid #334155;
+  padding: 16px;
 }
 
 .user-info{

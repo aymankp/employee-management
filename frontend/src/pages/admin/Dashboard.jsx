@@ -37,7 +37,7 @@ export default function EmployeeDashboard() {
   const [isIdle, setIsIdle] = useState(false);
   const [balance, setBalance] = useState(null);
   const [leaveType, setLeaveType] = useState("");
-
+  const today = new Date().toISOString().split("T")[0];
   const managerId = authUser?.manager;
 
   // ========== DATA FETCHING ==========
@@ -117,16 +117,13 @@ export default function EmployeeDashboard() {
 
     return () => {
       socket.off("status-update");
+      socket.disconnect();
     };
   }, [managerId]);
 
   // ========== CHART CALCULATIONS ==========
-  const usedCasual = balance
-    ? (balance.casual?.total || 0) - (balance.casual?.used || 0)
-    : 0;
-  const usedSick = balance
-    ? (balance.sick?.total || 0) - (balance.sick?.used || 0)
-    : 0;
+  const usedCasual = balance?.casual?.used || 0;
+  const usedSick = balance?.sick?.used || 0;
 
   const chartData = {
     labels: ["Casual", "Sick"],
@@ -134,7 +131,7 @@ export default function EmployeeDashboard() {
       {
         label: "Used Leaves",
         data: [usedCasual, usedSick],
-        backgroundColor: ["#4e73df", "#e74a3b"],
+        bbackgroundColor: ["#3b82f6", "#ef4444"],
         borderRadius: 6,
       },
     ],
@@ -142,12 +139,26 @@ export default function EmployeeDashboard() {
 
   const chartOptions = {
     responsive: true,
-    maintainAspectRatio: false,
     plugins: {
       legend: { display: false },
     },
     scales: {
-      y: { beginAtZero: true },
+      x: {
+        ticks: {
+          color: "#cbd5f5",
+        },
+        grid: {
+          color: "#334155",
+        },
+      },
+      y: {
+        ticks: {
+          color: "#cbd5f5",
+        },
+        grid: {
+          color: "#334155",
+        },
+      },
     },
   };
 
@@ -159,7 +170,10 @@ export default function EmployeeDashboard() {
       alert("All fields are required");
       return;
     }
-
+    if (new Date(toDate) < new Date(fromDate)) {
+      alert("To date cannot be before From date");
+      return;
+    }
     setLoading(true);
     try {
       await api.post("/leave/apply", {
@@ -359,7 +373,7 @@ export default function EmployeeDashboard() {
             </div>
             <div className="stat-content">
               <h3>Leave Usage</h3>
-              <div style={{ height: "60px", marginTop: "10px" }}>
+              <div style={{ height: "120px", marginTop: "10px" }}>
                 <Bar data={chartData} options={chartOptions} />
               </div>
             </div>
@@ -385,6 +399,7 @@ export default function EmployeeDashboard() {
                   type="date"
                   className="form-control"
                   value={fromDate}
+                  min={today}
                   onChange={(e) => setFromDate(e.target.value)}
                   required
                 />
@@ -399,6 +414,7 @@ export default function EmployeeDashboard() {
                   type="date"
                   className="form-control"
                   value={toDate}
+                  min={today}
                   onChange={(e) => setToDate(e.target.value)}
                   required
                 />
