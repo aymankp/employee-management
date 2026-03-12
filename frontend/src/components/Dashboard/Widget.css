@@ -1,22 +1,3 @@
-/* DARK MODE WIDGET */
-
-body.dark .stat-card {
-  background: var(--card-bg);
-  color: #f1f5f9;
-  border: 1px solid #334155;
-}
-
-body.dark .stat-card h3 {
-  color: #cbd5f5;
-}
-
-body.dark .stat-value {
-  color: #ffffff;
-}
-
-body.dark .stat-icon {
-  background: #334155;
-}
 
 .stat-card{
   display:flex;

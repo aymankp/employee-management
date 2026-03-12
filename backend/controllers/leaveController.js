@@ -4,20 +4,19 @@ const User = require("../models/User");
 
 const applyLeave = async (req, res) => {
   try {
-    const { fromDate, toDate, reason } = req.body;
+    const { fromDate, toDate, reason, leaveType } = req.body;
 
-    if (!fromDate || !toDate || !reason) {
-      return res.status(400).json({ message: "All fields are required" });
+    // fallback to AI only if user didn't select type
+    let finalType = leaveType;
+
+    if (!finalType) {
+      const detectedType = await classifyLeave(reason);
+      const allowed = ["sick", "casual", "emergency", "other"];
+
+      finalType = allowed.includes(detectedType?.toLowerCase())
+        ? detectedType.toLowerCase()
+        : "other";
     }
-
-    // 🧠 AI Leave Classification
-    const detectedType = await classifyLeave(reason);
-
-    const allowed = ["Sick", "Casual", "Emergency", "Other"];
-    const leaveType = allowed.includes(detectedType)
-      ? detectedType
-      : "Other";
-
     const leave = await Leave.create({
       employee: req.user._id,
       fromDate,

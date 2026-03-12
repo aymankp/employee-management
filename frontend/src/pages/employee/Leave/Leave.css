@@ -83,6 +83,7 @@
 .reason-cell{
   max-width:250px;
 }
+<<<<<<< HEAD
 
 body.dark .filters-card,
 body.dark .table-card{
@@ -96,4 +97,31 @@ body.dark .table th{
 
 body.dark .table td{
   border-bottom:1px solid #334155;
+=======
+.table-card{
+  background:#ffffff !important;
+  color:#1e293b !important;
+}
+
+.table{
+  background:#ffffff !important;
+}
+
+.table th{
+  background:#f8fafc !important;
+  color:#1e293b !important;
+}
+
+.table td{
+  background:#ffffff !important;
+  color:#334155 !important;
+}
+
+.table tbody tr:hover td{
+  background:#095db0 !important;
+  color:white !important;
+}
+.table tbody tr td{
+  transition:0.2s;
+>>>>>>> 4f7ecac (update backend)
 }

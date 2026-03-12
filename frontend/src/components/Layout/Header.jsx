@@ -1,5 +1,5 @@
 import { useAuth } from "../../context/AuthContext";
-import { Bell, LogOut, Menu, Moon, Sun, User } from "lucide-react";
+import { Bell, LogOut, Menu, User } from "lucide-react";
 import "./Header.css";
 import React, { useState, useEffect } from "react";
 import socket from "../../socket";
@@ -7,9 +7,7 @@ const Header = ({ toggleSidebar }) => {
   const { user, logout } = useAuth();
   const [showNotif, setShowNotif] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
-  const [darkMode, setDarkMode] = useState(false);
-
-  const [notifications,setNotifications]=useState(0);
+  const [notifications, setNotifications] = useState(0);
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme");
 
@@ -21,19 +19,19 @@ const Header = ({ toggleSidebar }) => {
       setDarkMode(false);
     }
     socket.on("leave-status-update", () => {
-    setNotifications(prev => prev + 1);
-  });
+      setNotifications((prev) => prev + 1);
+    });
 
-  return () => {
-    socket.off("leave-status-update");
-  };
+    return () => {
+      socket.off("leave-status-update");
+    };
   }, []);
   const toggleDark = () => {
-  const isDark = document.body.classList.toggle("dark");
+    const isDark = document.body.classList.toggle("dark");
 
-  setDarkMode(isDark);
-  localStorage.setItem("theme", isDark ? "dark" : "light");
-};
+    setDarkMode(isDark);
+    localStorage.setItem("theme", isDark ? "dark" : "light");
+  };
   useEffect(() => {
     if (darkMode) {
       document.body.classList.add("dark");
@@ -43,7 +41,6 @@ const Header = ({ toggleSidebar }) => {
   }, [darkMode]);
   return (
     <header className="header">
-      {/* LEFT */}
       <div className="header-left">
         <button className="mobile-menu-btn" onClick={toggleSidebar}>
           <Menu size={20} />
@@ -52,21 +49,14 @@ const Header = ({ toggleSidebar }) => {
         <h2>Welcome back, {user?.name?.split(" ")[0]}!</h2>
       </div>
 
-      {/* RIGHT */}
       <div className="header-right">
-        {/* DARK MODE */}
-        <button className="icon-btn" onClick={toggleDark}>
-          {darkMode ? <Sun size={18} /> : <Moon size={18} />}
-        </button>
-
-        {/* NOTIFICATIONS */}
         <div className="dropdown-wrapper">
           <button className="icon-btn" onClick={() => setShowNotif(!showNotif)}>
-           <Bell size={18} />
+            <Bell size={18} />
 
-{notifications > 0 && (
-  <span className="notif-badge">{notifications}</span>
-)}
+            {notifications > 0 && (
+              <span className="notif-badge">{notifications}</span>
+            )}
           </button>
 
           {showNotif && (
@@ -79,7 +69,6 @@ const Header = ({ toggleSidebar }) => {
           )}
         </div>
 
-        {/* USER PROFILE */}
         <div className="dropdown-wrapper">
           <div
             className="user-info"

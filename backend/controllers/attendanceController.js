@@ -55,8 +55,11 @@ const checkIn = async (req, res) => {
 // @route   PUT /api/attendance/checkout
 // @access  Private
 const checkOut = async (req, res) => {
+  const OFFICE_START = 9;   // 9 AM
+  const HALF_DAY_HOURS = 4;
+  const FULL_DAY_HOURS = 8;
   try {
-    const { notes } = req.body;
+    const { notes } = req.body || {};
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -83,9 +86,9 @@ const checkOut = async (req, res) => {
       });
     }
 
-    // Update checkout
     attendance.checkOut = new Date();
     attendance.notes = notes || attendance.notes;
+
     await attendance.save();
 
     res.json({
@@ -153,7 +156,7 @@ const getMyAttendance = async (req, res) => {
     const { month, year, page = 1, limit = 30 } = req.query;
 
     let startDate, endDate;
-    
+
     if (month && year) {
       startDate = new Date(year, month - 1, 1);
       endDate = new Date(year, month, 0, 23, 59, 59);

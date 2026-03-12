@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
-import api from '../../services/api';
+import api from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
-import { 
+import {
   Calendar,
   MapPin,
   CheckCircle,
@@ -10,32 +10,59 @@ import {
   TrendingUp,
   History,
   LogIn,
-  LogOut
-} from 'lucide-react';
+  LogOut,
+} from "lucide-react";
 import "./Attendance.css";
 
 export default function Attendance() {
-  const { user } = useAuth();
   const [todayStatus, setTodayStatus] = useState(null);
   const [attendanceHistory, setAttendanceHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [checking, setChecking] = useState(false);
+  const [liveHours, setLiveHours] = useState(0);
   const [message, setMessage] = useState({ type: "", text: "" });
+  const DAILY_WORK_HOURS = 8;
   const [stats, setStats] = useState({
     totalDays: 0,
     presentDays: 0,
     absentDays: 0,
     halfDays: 0,
     totalHours: 0,
-    averageHours: 0
+    averageHours: 0,
   });
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
 
   useEffect(() => {
     fetchTodayStatus();
-    fetchAttendanceHistory();
   }, []);
+
+  useEffect(() => {
+    fetchAttendanceHistory();
+  }, [selectedMonth, selectedYear]);
+
+  useEffect(() => {
+    if (!todayStatus?.checkedOut) {
+      const interval = setInterval(() => {
+        fetchTodayStatus();
+      }, 60000);
+
+      return () => clearInterval(interval);
+    }
+  }, [todayStatus]);
+  useEffect(() => {
+    if (!todayStatus?.checkedIn || todayStatus?.checkedOut) return;
+
+    const interval = setInterval(() => {
+      const checkInTime = new Date(todayStatus.checkInTime);
+      const now = new Date();
+
+      const diff = (now - checkInTime) / (1000 * 60 * 60);
+      setLiveHours(diff);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [todayStatus]);
 
   useEffect(() => {
     calculateStats();
@@ -53,7 +80,9 @@ export default function Attendance() {
   const fetchAttendanceHistory = async () => {
     try {
       setLoading(true);
-      const res = await api.get(`/attendance/my?month=${selectedMonth}&year=${selectedYear}`);
+      const res = await api.get(
+        `/attendance/my?month=${selectedMonth}&year=${selectedYear}`,
+      );
       setAttendanceHistory(res.data.attendance || []);
     } catch (error) {
       console.error("Error fetching attendance:", error);
@@ -64,18 +93,27 @@ export default function Attendance() {
 
   const calculateStats = () => {
     const total = attendanceHistory.length;
-    const present = attendanceHistory.filter(a => a.status === 'present').length;
-    const absent = attendanceHistory.filter(a => a.status === 'absent').length;
-    const half = attendanceHistory.filter(a => a.status === 'half-day').length;
-    const totalHours = attendanceHistory.reduce((sum, a) => sum + (a.workHours || 0), 0);
-    
+    const present = attendanceHistory.filter(
+      (a) => a.status === "present",
+    ).length;
+    const absent = attendanceHistory.filter(
+      (a) => a.status === "absent",
+    ).length;
+    const half = attendanceHistory.filter(
+      (a) => a.status === "half-day",
+    ).length;
+    const totalHours = attendanceHistory.reduce(
+      (sum, a) => sum + Number(a.workHours || 0),
+      0,
+    );
+
     setStats({
       totalDays: total,
       presentDays: present,
       absentDays: absent,
       halfDays: half,
       totalHours: Math.round(totalHours * 10) / 10,
-      averageHours: total > 0 ? Math.round((totalHours / total) * 10) / 10 : 0
+      averageHours: total > 0 ? Math.round((totalHours / total) * 10) / 10 : 0,
     });
   };
 
@@ -86,31 +124,34 @@ export default function Attendance() {
     try {
       // Get user location (optional)
       let location = "office";
+
       if (navigator.geolocation) {
         try {
           const position = await new Promise((resolve, reject) => {
             navigator.geolocation.getCurrentPosition(resolve, reject);
           });
-          location = `${position.coords.latitude},${position.coords.longitude}`;
-        } catch (error) {
-          console.log("Location access denied, using default");
+
+          location = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          };
+        } catch {
+          location = "office";
         }
       }
-
       await api.post("/attendance/checkin", { location });
-      
-      setMessage({ 
-        type: "success", 
-        text: "Check-in successful! Have a great day!" 
+
+      setMessage({
+        type: "success",
+        text: "Check-in successful! Have a great day!",
       });
-      
+
       fetchTodayStatus();
       fetchAttendanceHistory();
-
     } catch (error) {
-      setMessage({ 
-        type: "error", 
-        text: error.response?.data?.message || "Check-in failed" 
+      setMessage({
+        type: "error",
+        text: error.response?.data?.message || "Check-in failed",
       });
     } finally {
       setChecking(false);
@@ -122,37 +163,34 @@ export default function Attendance() {
     setMessage({ type: "", text: "" });
 
     try {
-      await api.put("/attendance/checkout");
-      
-      setMessage({ 
-        type: "success", 
-        text: "Check-out successful! Goodbye!" 
+      await api.put("/attendance/checkout", {
+        notes: "",
       });
-      
+
+      setMessage({
+        type: "success",
+        text: "Check-out successful! Goodbye!",
+      });
+
       fetchTodayStatus();
       fetchAttendanceHistory();
-
     } catch (error) {
-      setMessage({ 
-        type: "error", 
-        text: error.response?.data?.message || "Check-out failed" 
+      setMessage({
+        type: "error",
+        text: error.response?.data?.message || "Check-out failed",
       });
     } finally {
       setChecking(false);
     }
   };
 
-  const handleMonthChange = () => {
-    fetchAttendanceHistory();
-  };
-
   const getStatusIcon = (status) => {
-    switch(status) {
-      case 'present':
+    switch (status) {
+      case "present":
         return <CheckCircle size={16} className="status-present" />;
-      case 'absent':
+      case "absent":
         return <XCircle size={16} className="status-absent" />;
-      case 'half-day':
+      case "half-day":
         return <AlertCircle size={16} className="status-half" />;
       default:
         return null;
@@ -161,10 +199,27 @@ export default function Attendance() {
 
   const formatTime = (time) => {
     if (!time) return "-";
-    return new Date(time).toLocaleTimeString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit'
+
+    return new Date(time).toLocaleTimeString("en-IN", {
+      hour: "2-digit",
+      minute: "2-digit",
     });
+  };
+
+  const formatLiveHours = (hours) => {
+    const h = Math.floor(hours);
+    const m = Math.floor((hours - h) * 60);
+    const s = Math.floor(((hours - h) * 60 - m) * 60);
+
+    return `${h}h ${m}m ${s}s`;
+  };
+
+  const progressPercent = Math.min((liveHours / DAILY_WORK_HOURS) * 100, 100);
+
+  const getProgressColor = () => {
+    if (progressPercent < 50) return "#3b82f6";
+    if (progressPercent < 80) return "#f59e0b";
+    return "#22c55e";
   };
 
   return (
@@ -173,7 +228,9 @@ export default function Attendance() {
       <div className="page-header">
         <div>
           <h1 className="page-title">Attendance</h1>
-          <p className="page-subtitle">Track your daily attendance and work hours</p>
+          <p className="page-subtitle">
+            Track your daily attendance and work hours
+          </p>
         </div>
       </div>
 
@@ -183,12 +240,14 @@ export default function Attendance() {
           <h2>Today's Attendance</h2>
           <div className="today-date">
             <Calendar size={16} />
-            <span>{new Date().toLocaleDateString('en-US', { 
-              weekday: 'long', 
-              year: 'numeric', 
-              month: 'long', 
-              day: 'numeric' 
-            })}</span>
+            <span>
+              {new Date().toLocaleDateString("en-US", {
+                weekday: "long",
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              })}
+            </span>
           </div>
         </div>
 
@@ -204,24 +263,54 @@ export default function Attendance() {
               <div className="status-message present">
                 <CheckCircle size={48} />
                 <h3>Working</h3>
+
                 <p>Checked in at {formatTime(todayStatus.checkInTime)}</p>
-                {todayStatus.workHours > 0 && (
-                  <p className="hours">Worked: {todayStatus.workHours} hours</p>
+
+                {liveHours > 0 && (
+                  <p className="hours">
+                    Working for: {formatLiveHours(liveHours)}
+                  </p>
                 )}
+
+                {/* Work Progress */}
+                <div className="work-progress">
+                  <div className="progress-header">
+                    <span>Work Progress</span>
+                    <span>{liveHours.toFixed(1)} / 8 hrs</span>
+                  </div>
+
+                  <div className="progress-bar">
+                    <div
+                      className="progress-fill"
+                      style={{
+                        width: `${progressPercent}%`,
+                        background: getProgressColor(),
+                      }}
+                    ></div>
+                  </div>
+                </div>
               </div>
             ) : (
               <div className="status-message completed">
                 <LogOut size={48} />
                 <h3>Completed</h3>
                 <p>Checked out at {formatTime(todayStatus.checkOutTime)}</p>
-                <p className="hours">Total: {todayStatus.workHours} hours</p>
+                <p className="hours">
+                  Total:{" "}
+                  {liveHours > 0 && (
+                    <p className="hours">
+                      Working for: {formatLiveHours(liveHours)}
+                    </p>
+                  )}{" "}
+                  hours
+                </p>
               </div>
             )}
           </div>
 
           <div className="action-section">
             {!todayStatus?.checkedIn ? (
-              <button 
+              <button
                 className="btn btn-primary btn-large"
                 onClick={handleCheckIn}
                 disabled={checking}
@@ -230,7 +319,7 @@ export default function Attendance() {
                 {checking ? "Checking in..." : "Check In"}
               </button>
             ) : !todayStatus?.checkedOut ? (
-              <button 
+              <button
                 className="btn btn-success btn-large"
                 onClick={handleCheckOut}
                 disabled={checking}
@@ -250,7 +339,11 @@ export default function Attendance() {
         {/* Message */}
         {message.text && (
           <div className={`message message-${message.type}`}>
-            {message.type === 'success' ? <CheckCircle size={18} /> : <AlertCircle size={18} />}
+            {message.type === "success" ? (
+              <CheckCircle size={18} />
+            ) : (
+              <AlertCircle size={18} />
+            )}
             <span>{message.text}</span>
           </div>
         )}
@@ -259,7 +352,10 @@ export default function Attendance() {
       {/* Stats Cards */}
       <div className="stats-grid">
         <div className="stat-card">
-          <div className="stat-icon" style={{ background: '#dbeafe', color: '#2563eb' }}>
+          <div
+            className="stat-icon"
+            style={{ background: "#dbeafe", color: "#2563eb" }}
+          >
             <Calendar size={24} />
           </div>
           <div className="stat-content">
@@ -270,29 +366,48 @@ export default function Attendance() {
         </div>
 
         <div className="stat-card">
-          <div className="stat-icon" style={{ background: '#dcfce7', color: '#16a34a' }}>
+          <div
+            className="stat-icon"
+            style={{ background: "#dcfce7", color: "#16a34a" }}
+          >
             <CheckCircle size={24} />
           </div>
           <div className="stat-content">
             <h3>Present</h3>
             <p className="stat-value">{stats.presentDays}</p>
-            <span className="stat-label">{Math.round((stats.presentDays / stats.totalDays) * 100 || 0)}% attendance</span>
+            <span className="stat-label">
+              {stats.totalDays > 0
+                ? Math.round((stats.presentDays / stats.totalDays) * 100)
+                : 0}
+              % attendance
+            </span>
           </div>
         </div>
 
         <div className="stat-card">
-          <div className="stat-icon" style={{ background: '#fee2e2', color: '#dc2626' }}>
+          <div
+            className="stat-icon"
+            style={{ background: "#fee2e2", color: "#dc2626" }}
+          >
             <XCircle size={24} />
           </div>
           <div className="stat-content">
             <h3>Absent</h3>
             <p className="stat-value">{stats.absentDays}</p>
-            <span className="stat-label">{Math.round((stats.absentDays / stats.totalDays) * 100 || 0)}% absence</span>
+            <span className="stat-label">
+              {stats.totalDays > 0
+                ? Math.round((stats.absentDays / stats.totalDays) * 100)
+                : 0}
+              % absence
+            </span>
           </div>
         </div>
 
         <div className="stat-card">
-          <div className="stat-icon" style={{ background: '#fef3c7', color: '#d97706' }}>
+          <div
+            className="stat-icon"
+            style={{ background: "#fef3c7", color: "#d97706" }}
+          >
             <TrendingUp size={24} />
           </div>
           <div className="stat-content">
@@ -310,37 +425,36 @@ export default function Attendance() {
             <History size={20} />
             Attendance History
           </h2>
-          
+
           <div className="month-filter">
-            <select 
+            <select
               value={selectedMonth}
               onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
               className="month-select"
             >
               {Array.from({ length: 12 }, (_, i) => (
                 <option key={i + 1} value={i + 1}>
-                  {new Date(2000, i).toLocaleString('default', { month: 'long' })}
+                  {new Date(2000, i).toLocaleString("default", {
+                    month: "long",
+                  })}
                 </option>
               ))}
             </select>
-            
-            <select 
+
+            <select
               value={selectedYear}
               onChange={(e) => setSelectedYear(parseInt(e.target.value))}
               className="year-select"
             >
               {Array.from({ length: 5 }, (_, i) => {
                 const year = new Date().getFullYear() - 2 + i;
-                return <option key={year} value={year}>{year}</option>;
+                return (
+                  <option key={year} value={year}>
+                    {year}
+                  </option>
+                );
               })}
             </select>
-
-            <button 
-              className="btn btn-outline btn-sm"
-              onClick={handleMonthChange}
-            >
-              Go
-            </button>
           </div>
         </div>
 
@@ -371,14 +485,18 @@ export default function Attendance() {
                     <td>
                       <div className="date-cell">
                         {getStatusIcon(record.status)}
-                        {new Date(record.date).toLocaleDateString()}
+                        {new Date(record.date).toLocaleDateString("en-IN", {
+                          day: "2-digit",
+                          month: "short",
+                          year: "numeric",
+                        })}
                       </div>
                     </td>
                     <td>{formatTime(record.checkIn)}</td>
                     <td>{formatTime(record.checkOut)}</td>
                     <td>
                       <span className="hours-badge">
-                        {record.workHours ? `${record.workHours}h` : '-'}
+                        {record.workHours ? `${record.workHours}h` : "-"}
                       </span>
                     </td>
                     <td>
@@ -389,7 +507,11 @@ export default function Attendance() {
                     <td>
                       <span className="location-badge">
                         <MapPin size={12} />
-                        {record.location || 'office'}
+                        {typeof record.location === "string"
+                          ? record.location
+                          : record.location
+                            ? `${record.location.lat}, ${record.location.lng}`
+                            : "office"}
                       </span>
                     </td>
                   </tr>

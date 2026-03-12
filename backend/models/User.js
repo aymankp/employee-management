@@ -184,9 +184,8 @@ userSchema.virtual('leaveSummary').get(function() {
 });
 
 // Indexes for better performance
-userSchema.index({ email: 1 });
+
 userSchema.index({ role: 1, team: 1 });
-userSchema.index({ employeeId: 1 });
 userSchema.index({ 'employmentDetails.department': 1 });
 
 module.exports = mongoose.model("User", userSchema);

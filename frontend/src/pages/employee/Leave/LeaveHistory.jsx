@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 import { useState, useEffect } from "react";
+=======
+import { useState, useEffect, useMemo } from "react";
+>>>>>>> 4f7ecac (update backend)
 import api from "../../../services/api";
 import {
   Calendar,
@@ -12,8 +16,9 @@ import "./Leave.css";
 
 export default function LeaveHistory() {
   const [leaves, setLeaves] = useState([]);
-  const [filteredLeaves, setFilteredLeaves] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
   const [filters, setFilters] = useState({
     status: "all",
     type: "all",
@@ -21,13 +26,30 @@ export default function LeaveHistory() {
   });
 
   useEffect(() => {
+    let mounted = true;
+
+    const fetchLeaves = async () => {
+      try {
+        const res = await api.get("/leave/my");
+        if (mounted) setLeaves(res.data || []);
+      } catch (err) {
+        console.error(err);
+        setError("Failed to load leave history");
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+
     fetchLeaves();
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
-  useEffect(() => {
-    filterLeaves();
-  }, [leaves, filters]);
+  /* ---------- Filter Logic ---------- */
 
+<<<<<<< HEAD
   const fetchLeaves = async () => {
     try {
       const res = await api.get("/leave/my");
@@ -56,10 +78,43 @@ export default function LeaveHistory() {
     if (filters.search.trim() !== "") {
       filtered = filtered.filter((l) =>
         l.reason.toLowerCase().includes(filters.search.toLowerCase()),
+=======
+  const filteredLeaves = useMemo(() => {
+    let filtered = [...leaves].sort(
+      (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
+    );
+    const search = filters.search.toLowerCase();
+    if (filters.status !== "all") {
+      filtered = filtered.filter(
+        (l) => l.status?.toLowerCase() === filters.status.toLowerCase(),
+>>>>>>> 4f7ecac (update backend)
       );
     }
 
-    setFilteredLeaves(filtered);
+    if (filters.type !== "all") {
+      filtered = filtered.filter(
+        (l) => l.leaveType?.toLowerCase() === filters.type.toLowerCase(),
+      );
+    }
+
+    if (search.trim()) {
+      filtered = filtered.filter((l) =>
+        (l.reason || "").toLowerCase().includes(search),
+      );
+    }
+    return filtered;
+  }, [leaves, filters]);
+
+  /* ---------- Helpers ---------- */
+
+  const formatDate = (date) => {
+    if (!date) return "-";
+    return new Date(date).toLocaleDateString("en-IN");
+  };
+
+  const getDays = (from, to) => {
+    const diff = new Date(to) - new Date(from);
+    return Math.ceil(diff / (1000 * 60 * 60 * 24)) + 1;
   };
 
   const getStatusBadge = (status) => {
@@ -70,18 +125,30 @@ export default function LeaveHistory() {
             <CheckCircle size={12} /> Approved
           </span>
         );
+<<<<<<< HEAD
+=======
+
+>>>>>>> 4f7ecac (update backend)
       case "rejected":
         return (
           <span className="badge badge-danger">
             <XCircle size={12} /> Rejected
           </span>
         );
+<<<<<<< HEAD
+=======
+
+>>>>>>> 4f7ecac (update backend)
       case "pending":
         return (
           <span className="badge badge-warning">
             <AlertCircle size={12} /> Pending
           </span>
         );
+<<<<<<< HEAD
+=======
+
+>>>>>>> 4f7ecac (update backend)
       default:
         return <span className="badge badge-secondary">{status}</span>;
     }
@@ -91,10 +158,21 @@ export default function LeaveHistory() {
     switch (type) {
       case "casual":
         return <span className="badge badge-casual">Casual</span>;
+<<<<<<< HEAD
       case "sick":
         return <span className="badge badge-sick">Sick</span>;
+=======
+
+      case "sick":
+        return <span className="badge badge-sick">Sick</span>;
+
+>>>>>>> 4f7ecac (update backend)
       case "emergency":
         return <span className="badge badge-danger">Emergency</span>;
+
+      case "other":
+        return <span className="badge badge-secondary">Other</span>;
+
       default:
         return <span className="badge badge-secondary">{type}</span>;
     }
@@ -103,12 +181,18 @@ export default function LeaveHistory() {
   return (
     <div className="leave-history-container">
       {/* Header */}
+
       <div className="page-header">
         <h1 className="page-title">Leave History</h1>
         <p className="page-subtitle">View all your leave applications</p>
       </div>
 
+      {/* Error */}
+
+      {error && <div className="error-box">{error}</div>}
+
       {/* Filters */}
+
       <div className="filters-card">
         <div className="filters-header">
           <Filter size={16} />
@@ -116,8 +200,14 @@ export default function LeaveHistory() {
         </div>
 
         <div className="filters-grid">
+          {/* Status */}
+
           <div className="filter-group">
             <label>Status</label>
+<<<<<<< HEAD
+=======
+
+>>>>>>> 4f7ecac (update backend)
             <select
               value={filters.status}
               onChange={(e) =>
@@ -132,8 +222,14 @@ export default function LeaveHistory() {
             </select>
           </div>
 
+          {/* Leave Type */}
+
           <div className="filter-group">
             <label>Leave Type</label>
+<<<<<<< HEAD
+=======
+
+>>>>>>> 4f7ecac (update backend)
             <select
               value={filters.type}
               onChange={(e) => setFilters({ ...filters, type: e.target.value })}
@@ -143,13 +239,18 @@ export default function LeaveHistory() {
               <option value="casual">Casual</option>
               <option value="sick">Sick</option>
               <option value="emergency">Emergency</option>
+              <option value="other">Other</option>
             </select>
           </div>
 
+          {/* Search */}
+
           <div className="filter-group search-group">
             <label>Search</label>
+
             <div className="search-input">
               <Search size={14} />
+
               <input
                 type="text"
                 placeholder="Search by reason..."
@@ -163,15 +264,22 @@ export default function LeaveHistory() {
         </div>
       </div>
 
-      {/* Leaves Table */}
+      {/* Table */}
+
       <div className="table-card">
         {loading ? (
           <div className="loading-state">Loading...</div>
         ) : filteredLeaves.length === 0 ? (
           <div className="empty-state">
             <Calendar size={48} />
+
             <h3>No leaves found</h3>
-            <p>You haven't applied for any leaves yet.</p>
+
+            <p>
+              {leaves.length === 0
+                ? "You haven't applied for any leaves yet."
+                : "No leaves match your filters."}
+            </p>
           </div>
         ) : (
           <div className="table-container">
@@ -180,21 +288,32 @@ export default function LeaveHistory() {
                 <tr>
                   <th>From</th>
                   <th>To</th>
+                  <th>Days</th>
                   <th>Type</th>
                   <th>Reason</th>
                   <th>Status</th>
                   <th>Applied On</th>
                 </tr>
               </thead>
+
               <tbody>
                 {filteredLeaves.map((leave) => (
                   <tr key={leave._id}>
-                    <td>{new Date(leave.fromDate).toLocaleDateString()}</td>
-                    <td>{new Date(leave.toDate).toLocaleDateString()}</td>
+                    <td>{formatDate(leave.fromDate)}</td>
+
+                    <td>{formatDate(leave.toDate)}</td>
+
+                    <td>{getDays(leave.fromDate, leave.toDate)}</td>
+
                     <td>{getTypeBadge(leave.leaveType)}</td>
-                    <td className="reason-cell">{leave.reason}</td>
+
+                    <td className="reason-cell">
+                      {leave.reason || "No reason"}
+                    </td>
+
                     <td>{getStatusBadge(leave.status)}</td>
-                    <td>{new Date(leave.createdAt).toLocaleDateString()}</td>
+
+                    <td>{formatDate(leave.createdAt)}</td>
                   </tr>
                 ))}
               </tbody>

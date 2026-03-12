@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import api from "../../services/api";
 import socket from "../../socket";
 import { useAuth } from "../../context/AuthContext";
-import { useNavigate } from "react-router-dom";
 import "./Dashboard.css";
 import Widget from "../../components/Dashboard/Widget";
 import SkeletonCard from "../../components/Dashboard/SkeletonCard";
@@ -22,18 +21,15 @@ import {
   Calendar,
   FileText,
   Users,
-  Clock,
   CheckCircle,
   XCircle,
   AlertCircle,
-  PlusCircle,
 } from "lucide-react";
 
 ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend);
 
 export default function EmployeeDashboard() {
   const { user } = useAuth();
-  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [leaves, setLeaves] = useState([]);
   const [balance, setBalance] = useState(null);
@@ -47,10 +43,13 @@ export default function EmployeeDashboard() {
   // ------------------------
 
   const fetchLeaves = async () => {
-    const res = await api.get("/leave/my");
-    setLeaves(res.data);
+    try {
+      const res = await api.get("/leave/my");
+      setLeaves(res.data);
+    } catch (err) {
+      console.error(err);
+    }
   };
-
   const fetchBalance = async () => {
     const res = await api.get("/auth/me");
     setBalance(res.data.leaveBalance);
@@ -63,12 +62,15 @@ export default function EmployeeDashboard() {
     setLastSeen(res.data.lastSeen);
   };
   useEffect(() => {
+    if (!user) return;
+
     const load = async () => {
       await Promise.all([fetchLeaves(), fetchBalance(), fetchManagerStatus()]);
       setLoading(false);
     };
+
     load();
-  }, []);
+  }, [user]);
 
   // ------------------------
   // Socket realtime manager status
@@ -97,21 +99,48 @@ export default function EmployeeDashboard() {
   // ------------------------
 
   const casualUsed = balance ? balance.casual?.used || 0 : 0;
+  const casualTotal = balance ? balance.casual?.total || 0 : 0;
 
   const sickUsed = balance ? balance.sick?.used || 0 : 0;
+  const sickTotal = balance ? balance.sick?.total || 0 : 0;
+
+  const emergencyUsed = balance ? balance.emergency?.used || 0 : 0;
+  const emergencyTotal = balance ? balance.emergency?.total || 0 : 0;
+
+  const otherUsed = balance ? balance.other?.used || 0 : 0;
+  const otherTotal = balance ? balance.other?.total || 0 : 0;
+
+  const casualRemaining = casualTotal - casualUsed;
+  const sickRemaining = sickTotal - sickUsed;
+  const emergencyRemaining = emergencyTotal - emergencyUsed;
+  const otherRemaining = otherTotal - otherUsed;
 
   const chartData = {
-    labels: ["Casual", "Sick"],
-    datasets: [
-      {
-        label: "Leave Used",
-        data: [casualUsed, sickUsed],
-        backgroundColor: ["#3b82f6", "#ef4444"],
-        borderRadius: 6,
-      },
-    ],
-  };
+  labels: ["Casual", "Sick", "Emergency", "Other"],
+  datasets: [
+    {
+      label: "Used",
+      data: [casualUsed, sickUsed, emergencyUsed, otherUsed],
+      backgroundColor: "#ef4444",
+      borderRadius: 6,
+      stack: "leave"
+    },
+    {
+      label: "Remaining",
+      data: [
+        casualRemaining,
+        sickRemaining,
+        emergencyRemaining,
+        otherRemaining
+      ],
+      backgroundColor: "#10b981",
+      borderRadius: 6,
+      stack: "leave"
+    }
+  ]
+};
 
+<<<<<<< HEAD
 const isDark = document.body.classList.contains("dark");
 
 const chartOptions = {
@@ -131,6 +160,28 @@ const chartOptions = {
     y:{
       ticks:{ color:isDark ? "#e2e8f0" : "#334155" },
       grid:{ color:isDark ? "#334155" : "#e2e8f0" }
+=======
+  const chartOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+
+  plugins: {
+    legend: {
+      position: "top"
+    }
+  },
+
+  scales: {
+    x: {
+      stacked: true
+    },
+    y: {
+      stacked: true,
+      beginAtZero: true,
+      ticks: {
+        stepSize: 1
+      }
+>>>>>>> 4f7ecac (update backend)
     }
   }
 };
@@ -168,7 +219,13 @@ const chartOptions = {
     );
   };
 
-  const words = ["Innovative", "Productive", "Focused", "Consistent", "Building"];
+  const words = [
+    "Innovative",
+    "Productive",
+    "Focused",
+    "Consistent",
+    "Building",
+  ];
 
   const [wordIndex, setWordIndex] = useState(0);
 
@@ -220,7 +277,7 @@ const chartOptions = {
               icon={<FileText size={22} />}
               title="Total Leaves"
               value={leaves.length}
-              subtitle="This year"
+              subtitle="Applied this year"
             />
 
             <Widget
@@ -277,7 +334,7 @@ const chartOptions = {
                   <tr key={leave._id}>
                     <td>{formatDate(leave.fromDate)}</td>
                     <td>{formatDate(leave.toDate)}</td>
-                   <td className="leave-type">{leave.leaveType}</td>
+                    <td className="leave-type">{leave.leaveType}</td>
                     <td>{getStatus(leave.status)}</td>
                   </tr>
                 ))}

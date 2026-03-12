@@ -25,11 +25,13 @@ const documentRoutes = require('./routes/documentRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
 // Add with other routes
 const reportRoutes = require('./routes/reportRoutes');
-dotenv.config();
+
+
+
 connectDB();
 const app = express();
 const server = http.createServer(app);
-
+require("./jobs/attendanceJobs");
 // middleware
 app.use(cors());
 app.use(express.json());

@@ -1,6 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from "react";
 import { login as loginApi, getProfile } from "../services/api";
-import api from "../services/api"; // ✅ Import api to set headers
+import api from "../services/api"; // Import api to set headers
 
 const AuthContext = createContext();
 
@@ -17,21 +17,20 @@ export const AuthProvider = ({ children }) => {
           setLoading(false);
           return;
         }
-        // ✅ Set token in API headers
+        //  Set token in API headers
         api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
 
         const response = await getProfile();
-        console.log("✅ User loaded:", response.data);
         setUser(response.data.user || response.data.profile);
       } catch (error) {
         console.error("❌ Failed to load user:", error);
 
-        // ✅ SIRF TABHI TOKEN HATAO JAB API 401 DE
+        // SIRF TABHI TOKEN HATAO JAB API 401 DE
         if (error.response?.status === 401) {
           localStorage.removeItem("token");
           delete api.defaults.headers.common["Authorization"];
         }
-        // ✅ AGAR KOI AUR ERROR HAI TO TOKEN MAT HATAO
+        // AGAR KOI AUR ERROR HAI TO TOKEN MAT HATAO
       } finally {
         setLoading(false);
       }
@@ -60,7 +59,6 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
-    console.log("👋 Logging out...");
     localStorage.removeItem("token");
     delete api.defaults.headers.common["Authorization"];
     setUser(null);
